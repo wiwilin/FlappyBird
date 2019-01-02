@@ -29,7 +29,11 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
         var pipes:SKNode!
     
-   
+        enum GameStatus {
+            case idle
+            case running 
+            case over
+        }
     
     
         override func didMove(to view: SKView) {
