@@ -8,8 +8,14 @@
 
 import SpriteKit
 import GameplayKit
+import AVFoundation
+
 
 class GameScene: SKScene,SKPhysicsContactDelegate {
+    
+        var avPlayer:AVAudioPlayer!
+    
+        var skyColor:SKColor!
     
         private var label : SKLabelNode?
         private var spinnyNode : SKShapeNode?
@@ -22,6 +28,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         let birdCategory: UInt32 = 1 << 0  //1
         let worldCategory: UInt32 = 1 << 1  //2
         let pipeCategory: UInt32 = 1 << 2  //4
+        let scoreCategory: UInt32 = 1 << 3  //8
     
         var pipeTextureUp:SKTexture!
     
@@ -29,20 +36,115 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
         var pipes:SKNode!
     
+        var score: NSInteger = 0
+    
+        lazy var gameOverLabel:SKLabelNode = {
+        let label = SKLabelNode(fontNamed: "Chalkduster")
+        label.text = "Game Over"
+        return label
+    }()
+    
+        lazy var scoreLabelNode:SKLabelNode = {
+        let label = SKLabelNode(fontNamed: "MarkerFelt-Wide")
+        label.zPosition = 100
+        label.text = "0"
+        return label
+    }()
+    
+        var moving:SKNode!
+    
         enum GameStatus {
             case idle
-            case running 
+            case running
             case over
         }
+
+        var gameStatus:GameStatus = .idle
     
+        func idleStatus() {
+            gameStatus = .idle
+            removeAllPipesNode()
+            
+            gameOverLabel.removeFromParent()
+            scoreLabelNode.removeFromParent()
+            
+            bird.position = CGPoint(x: self.frame.size.width * 0.35, y: self.frame.size.height * 0.6)
+            bird.physicsBody?.isDynamic = false
+            self.birdStopFly()
+            moving.speed = 1
+        }
+    
+        func runningStatus() {
+            gameStatus = .running
+            
+            score = 0
+            scoreLabelNode.text = String(score)
+            self.addChild(scoreLabelNode)
+            scoreLabelNode.position = CGPoint(x: self.frame.midX, y: 3 * self.frame.size.height / 4)
+
+            bird.physicsBody?.isDynamic = true
+            bird.physicsBody?.collisionBitMask = worldCategory | pipeCategory
+            startCreateRandomPipes()
+        }
+    
+        func overStatus() {
+            gameStatus = .over
+            birdStopFly()
+            stopCreateRandomPipes()
+            
+            addChild(gameOverLabel)
+            gameOverLabel.position = CGPoint(x: self.size.width * 0.5, y: self.size.height)
+            isUserInteractionEnabled = false;
+            
+            let delay = SKAction.wait(forDuration: TimeInterval(1))
+            let move = SKAction.move(by: CGVector(dx: 0, dy: -self.size.height * 0.5), duration: 1)
+            gameOverLabel.run(SKAction.sequence([delay,move]), completion:{
+                self.isUserInteractionEnabled = true
+            })
+
+        }
+    
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+            switch gameStatus {
+            case .idle:
+                runningStatus()
+                break
+            case .running:
+                for _ in touches {
+                    bird.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+                    bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 10))
+                }
+                break
+            case .over:
+                idleStatus()
+                break
+            }
+        }
     
         override func didMove(to view: SKView) {
-        self.backgroundColor =  SKColor(red: 81.0/255.0, green: 192.0/255.0, blue: 201.0/255.0, alpha: 1.0)
+            
+            let path = Bundle.main.path(forResource: "background", ofType: "mp3")
+            let pathUrl = URL(fileURLWithPath: path!)
+            do {
+                try avPlayer = AVAudioPlayer(contentsOf: pathUrl)
+            }catch {
+              
+                print("mp3 error")
+            }
+            avPlayer.play()
+            avPlayer.volume = 0.3
+            
+        skyColor  =  SKColor(red: 81.0/255.0, green: 192.0/255.0, blue: 201.0/255.0, alpha: 1.0)
+        self.backgroundColor = skyColor
             
         self.physicsBody = SKPhysicsBody(edgeLoopFrom: self.frame)
         self.physicsWorld.contactDelegate = self;
         self.physicsWorld.gravity = CGVector(dx: 0.0, dy: -3.0)
        
+        moving = SKNode()
+        self.addChild(moving)
+        pipes = SKNode()
+        moving.addChild(pipes)
     
         let groundTexture = SKTexture(imageNamed: "land")
         groundTexture.filteringMode = .nearest
@@ -53,7 +155,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             sprite.anchorPoint = CGPoint(x: 0, y: 0)
             sprite.position = CGPoint(x: i * sprite.size.width, y: 0)
             self.moveGround(sprite: sprite, timer: 0.02)
-            self.addChild(sprite)
+            moving.addChild(sprite)
         }
             
             
@@ -67,14 +169,8 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             sprite.anchorPoint = CGPoint(x: 0, y:0)
             sprite.position = CGPoint(x: i * sprite.size.width, y:groundTexture.size().height * 2.0)
             self.moveGround(sprite: sprite, timer: 0.1)
-            self.addChild(sprite)
+            moving.addChild(sprite)
         }
-
-        bird = SKSpriteNode(imageNamed: "bird-01")
-        bird.setScale(1.5)
-        bird.position = CGPoint(x: self.frame.size.width * 0.35, y:self.frame.size.height * 0.6)
-        self.addChild(bird)
-        self.birdStartFly()
         
             
         let ground = SKNode()
@@ -84,14 +180,19 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         ground.physicsBody?.categoryBitMask = worldCategory
         self.addChild(ground)
             
+        bird = SKSpriteNode(imageNamed: "bird-01")
+        bird.setScale(1.5)
+        self.addChild(bird)
+        
         bird.physicsBody = SKPhysicsBody(circleOfRadius: bird.size.height / 2.0)
+        //bird.physicsBody = SKPhysicsBody(texture: bird.texture!, size: bird.size)
         bird.physicsBody?.allowsRotation = false
         bird.physicsBody?.categoryBitMask = birdCategory
-        bird.physicsBody?.contactTestBitMask = worldCategory
+        bird.physicsBody?.contactTestBitMask = worldCategory | pipeCategory
+            
+        self.idleStatus()
         
-        pipes = SKNode()
-        self.addChild(pipes)
-        startCreateRandomPipes()
+      
             
     }
     
@@ -154,6 +255,14 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         pipeUp.physicsBody?.categoryBitMask = pipeCategory
         pipeUp.physicsBody?.contactTestBitMask = birdCategory
         
+        let contactNode = SKNode()
+        contactNode.position = CGPoint(x: pipeDown.size.width, y: self.frame.midY)
+        contactNode.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: pipeUp.size.width, height: self.frame.size.height))
+        contactNode.physicsBody?.isDynamic = false
+        contactNode.physicsBody?.categoryBitMask = scoreCategory
+        contactNode.physicsBody?.contactTestBitMask = birdCategory
+        pipePair.addChild(contactNode)
+        
         
         let distanceToMove = CGFloat(self.size.width + 2.0*pipeTextureUp.size().width)
         let movePipes = SKAction.moveBy(x: -distanceToMove, y: 0.0, duration: TimeInterval(0.01 * distanceToMove))
@@ -182,7 +291,40 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         pipes.removeAllChildren()
     }
     
-    override func update(_ currentTime: TimeInterval) {
-        
+    func didBegin(_ contact: SKPhysicsContact) {
+        if gameStatus != .running {
+            return
+        }
+        if (contact.bodyA.categoryBitMask & scoreCategory) == scoreCategory || (contact.bodyB.categoryBitMask & scoreCategory) == scoreCategory {
+            score += 1
+            print(score)
+            scoreLabelNode.text = String(score)
+            scoreLabelNode.run(SKAction.sequence([SKAction.scale(to: 1.5, duration: TimeInterval(0.1)),SKAction.scale(to: 1.0, duration: TimeInterval(0.1))]))
+        }else{
+            moving.speed = 0
+            bird.physicsBody?.collisionBitMask = worldCategory
+            bird.run(SKAction.rotate(byAngle: .pi * CGFloat(bird.position.y) * 0.01, duration: 1))
+            bgFlash()
+            overStatus()
+        }
     }
-}
+    
+    func bgFlash() {
+        let bgFlash = SKAction.run({
+            self.backgroundColor = SKColor(red: 1, green: 0, blue: 0, alpha: 1.0)}
+        )
+        let bgNormal = SKAction.run({
+            self.backgroundColor = self.skyColor;
+        })
+        let bgFlashAndNormal = SKAction.sequence([bgFlash,SKAction.wait(forDuration: (0.05)),bgNormal,SKAction.wait(forDuration: (0.05))])
+        self.run(SKAction.sequence([SKAction.repeat(bgFlashAndNormal, count: 4)]), withKey: "falsh")
+        self.removeAction(forKey: "flash")
+    }
+ 
+    override func update(_ currentTime: TimeInterval) {
+            let value = bird.physicsBody!.velocity.dy * (bird.physicsBody!.velocity.dy < 0 ? 0.003 : 0.001)
+            bird.zRotation = min(max(-1, value),0.5)
+        }
+
+    }
+

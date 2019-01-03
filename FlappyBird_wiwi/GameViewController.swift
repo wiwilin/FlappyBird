@@ -9,11 +9,19 @@
 import UIKit
 import SpriteKit
 import GameplayKit
+import AVFoundation
+
 
 class GameViewController: UIViewController {
+    
+    
+    
+    
+    var audioPlayer:AVAudioPlayer = AVAudioPlayer()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         
         if let view = self.view as! SKView? {
            
@@ -26,6 +34,12 @@ class GameViewController: UIViewController {
         }
         
     }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
 
     override var shouldAutorotate: Bool {
         return true

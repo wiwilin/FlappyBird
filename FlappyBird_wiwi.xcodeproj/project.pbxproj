@@ -16,6 +16,7 @@
 		A9CE25B321CF83D0009991A9 /* FlappyBird_wiwiTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CE25B221CF83D0009991A9 /* FlappyBird_wiwiTests.swift */; };
 		A9CE25BE21CF83D0009991A9 /* FlappyBird_wiwiUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CE25BD21CF83D0009991A9 /* FlappyBird_wiwiUITests.swift */; };
 		A9CE25CC21CFC031009991A9 /* bird.atlas in Resources */ = {isa = PBXBuildFile; fileRef = A9CE25CB21CFC031009991A9 /* bird.atlas */; };
+		A9FFA88B21DCA6A200EA463D /* background.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A9FFA88A21DCA6A100EA463D /* background.mp3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,7 @@
 		A9CE25BD21CF83D0009991A9 /* FlappyBird_wiwiUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlappyBird_wiwiUITests.swift; sourceTree = "<group>"; };
 		A9CE25BF21CF83D0009991A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A9CE25CB21CFC031009991A9 /* bird.atlas */ = {isa = PBXFileReference; lastKnownFileType = folder.skatlas; path = bird.atlas; sourceTree = "<group>"; };
+		A9FFA88A21DCA6A100EA463D /* background.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = background.mp3; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +83,7 @@
 		A9CE258B21CF83CD009991A9 = {
 			isa = PBXGroup;
 			children = (
+				A9FFA88A21DCA6A100EA463D /* background.mp3 */,
 				A9CE25CB21CFC031009991A9 /* bird.atlas */,
 				A9CE259621CF83CD009991A9 /* FlappyBird_wiwi */,
 				A9CE25B121CF83D0009991A9 /* FlappyBird_wiwiTests */,
@@ -236,6 +239,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A9CE25A321CF83CD009991A9 /* Main.storyboard in Resources */,
+				A9FFA88B21DCA6A200EA463D /* background.mp3 in Resources */,
 				A9CE25A521CF83D0009991A9 /* Assets.xcassets in Resources */,
 				A9CE25CC21CFC031009991A9 /* bird.atlas in Resources */,
 				A9CE25A821CF83D0009991A9 /* LaunchScreen.storyboard in Resources */,
